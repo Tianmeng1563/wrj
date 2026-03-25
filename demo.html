@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>无人机智能化应用Demo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family: system-ui; }
+        body { display:flex; height:100vh; background:#f5f5f5; }
+        .nav { width:220px; background:white; border-right:1px solid #ddd; padding:16px; }
+        .nav h3 { margin-bottom:12px; color:#333; }
+        .nav button { width:100%; padding:10px; margin:6px 0; border:none; border-radius:6px; background:#f0f0f0; cursor:pointer; }
+        .nav button.active { background:#4285f4; color:white; }
+        .main { flex:1; padding:16px; display:flex; flex-direction:column; gap:12px; }
+        #map { flex:1; border-radius:8px; overflow:hidden; }
+        .control { background:white; padding:14px; border-radius:8px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .control label { font-size:13px; color:#666; }
+        .control input { padding:8px; border:1px solid #ddd; border-radius:6px; }
+        .control button { padding:8px; border:none; border-radius:6px; background:#4285f4; color:white; cursor:pointer; }
+        .coord { margin-top:10px; }
+        .status { color:#0a0; font-size:13px; margin-top:6px; }
+        #heartbeat { display:none; padding:20px; background:white; border-radius:8px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h3>导航</h3>
+        <button class="page-btn active" data-page="route">航线规划</button>
+        <button class="page-btn" data-page="monitor">飞行监控</button>
+        <div class="coord">
+            <label>坐标系</label><br>
+            <label><input type="radio" name="coord" value="WGS-84"> WGS-84</label><br>
+            <label><input type="radio" name="coord" value="GCJ-02" checked> GCJ-02</label>
+        </div>
+        <div class="status" id="status">A点未设 | B点未设</div>
+    </div>
+
+    <div class="main">
+        <div id="route-page">
+            <div id="map"></div>
+            <div class="control">
+                <div>
+                    <label>起点A 纬度</label>
+                    <input id="latA" value="32.2322">
+                </div>
+                <div>
+                    <label>起点A 经度</label>
+                    <input id="lngA" value="118.749">
+                </div>
+                <div>
+                    <label>终点B 纬度</label>
+                    <input id="latB" value="32.2343">
+                </div>
+                <div>
+                    <label>终点B 经度</label>
+                    <input id="lngB" value="118.749">
+                </div>
+                <button onclick="setPoint('A')">设置A点</button>
+                <button onclick="setPoint('B')">设置B点</button>
+                <div style="grid-column: 1/-1;">
+                    <label>飞行高度(m)</label>
+                    <input type="range" min="10" max="120" value="50" id="height">
+                </div>
+            </div>
+        </div>
+
+        <div id="heartbeat">
+            <h3>心跳包监控</h3>
+            <p>设备在线 | 信号强度：98% | 电压：12.6V</p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map = L.map('map').setView([32.233, 118.749], 18);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let markerA, markerB;
+        let hasA = false, hasB = false;
+
+        // 页面切换
+        document.querySelectorAll('.page-btn').forEach(btn=>{
+            btn.onclick = ()=>{
+                document.querySelectorAll('.page-btn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                let page = btn.dataset.page;
+                document.getElementById('route-page').style.display = page=='route'?'flex':'none';
+                document.getElementById('heartbeat').style.display = page=='monitor'?'block':'none';
+            }
+        });
+
+        // 设置A/B点
+        function setPoint(type) {
+            let lat = parseFloat(type=='A'?document.getElementById('latA').value:document.getElementById('latB').value);
+            let lng = parseFloat(type=='A'?document.getElementById('lngA').value:document.getElementById('lngB').value);
+            if(type=='A') { markerA = L.marker([lat,lng]).addTo(map).bindPopup('起点A'); hasA=true; }
+            else { markerB = L.marker([lat,lng]).addTo(map).bindPopup('终点B'); hasB=true; }
+            updateStatus();
+        }
+
+        function updateStatus() {
+            document.getElementById('status').innerText = 
+                (hasA?'A点已设':'A点未设') + ' | ' + (hasB?'B点已设':'B点未设');
+        }
+    </script>
+</body>
+</html>
